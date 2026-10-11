@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1020">
+<title>Find the Imposter</title>
+<style>
+  :root{
+    --bg:#0e1020; --panel:#181b31; --panel2:#20244a; --line:#2e3360;
+    --text:#eef0ff; --dim:#9aa1c9; --accent:#7c6cff; --accent2:#4dd6a5;
+    --danger:#ff5d73; --warn:#ffc24b; --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  html{background:var(--bg)}
+  body{
+    background:radial-gradient(1200px 600px at 50% -10%, #232752 0%, var(--bg) 55%);
+    color:var(--text);
+    font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  header{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:14px 16px 6px;max-width:560px;margin:0 auto;
+  }
+  header .brand{font-weight:800;letter-spacing:.4px;font-size:15px;color:var(--dim);text-transform:uppercase}
+  main{max-width:560px;margin:0 auto;padding:8px 16px 40px;min-width:0}
+  h1{font-size:30px;line-height:1.15;margin:10px 0 6px}
+  h2{font-size:23px;line-height:1.2;margin:10px 0 8px;overflow-wrap:anywhere}
+  p{margin:8px 0;overflow-wrap:anywhere}
+  .dim{color:var(--dim)}
+  .eyebrow{color:var(--accent2);font-weight:700;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;margin:14px 0 2px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin:12px 0}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  button{
+    appearance:none;border:1px solid var(--line);background:var(--panel2);color:var(--text);
+    font:inherit;font-weight:700;border-radius:12px;padding:13px 18px;cursor:pointer;
+    touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  }
+  button:active{transform:translateY(1px)}
+  button.primary{background:linear-gradient(135deg,#7c6cff,#5a8bff);border-color:transparent;color:#fff;box-shadow:0 6px 18px rgba(100,100,255,.28)}
+  button.ghost{background:transparent}
+  button.icon{padding:9px 13px;font-size:14px}
+  button.wide{display:block;width:100%}
+  button[disabled]{opacity:.45;cursor:not-allowed}
+  .seg{display:flex;gap:8px;flex-wrap:wrap}
+  .seg button{flex:1 1 auto;min-width:64px}
+  .seg button.on{background:var(--accent);border-color:transparent;color:#fff}
+  .stepper{display:flex;align-items:center;gap:14px}
+  .stepper .num{font-size:30px;font-weight:800;min-width:2ch;text-align:center}
+  input[type=text]{
+    width:100%;font:inherit;color:var(--text);background:#12142a;border:1px solid var(--line);
+    border-radius:10px;padding:11px 12px;margin:4px 0;
+  }
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin:12px 0}
+  .grid button{width:100%;overflow-wrap:anywhere}
+  .grid button.on{background:var(--danger);border-color:transparent;color:#fff}
+  .guessgrid button.on{background:var(--warn);color:#20160a;border-color:transparent}
+  .role-card{
+    background:linear-gradient(160deg,#262b5e,#161936);
+    border:2px dashed var(--accent);border-radius:22px;
+    min-height:230px;display:flex;align-items:center;justify-content:center;text-align:center;
+    padding:22px;margin:16px 0;cursor:pointer;user-select:none;-webkit-user-select:none;
+  }
+  .role-card.open{border-style:solid;border-color:var(--accent2)}
+  .reveal-panel{font-size:20px;font-weight:700;max-width:100%;overflow-wrap:anywhere}
+  .reveal-panel .big{font-size:28px;display:block;margin:6px 0}
+  .reveal-panel .word{color:var(--accent2);font-size:34px;display:block;margin:10px 0 2px;letter-spacing:1px;text-transform:uppercase}
+  .reveal-panel .imp{color:var(--danger)}
+  .reveal-panel .tiny{font-size:13px;color:var(--dim);font-weight:600;display:block;margin-top:12px}
+  .clock{font-size:44px;font-weight:800;font-variant-numeric:tabular-nums;text-align:center;margin:8px 0}
+  .clock.paused{color:var(--warn)}
+  .pill{display:inline-block;background:#12142a;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px;color:var(--dim);margin:2px 6px 2px 0}
+  table{width:100%;border-collapse:collapse;margin:10px 0}
+  th,td{text-align:left;padding:9px 6px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+  th{color:var(--dim);font-size:12px;text-transform:uppercase;letter-spacing:1px}
+  td.score{font-weight:800;text-align:right}
+  .banner{border-radius:var(--radius);padding:18px 16px;margin:14px 0;font-weight:800;font-size:21px;text-align:center}
+  .banner.good{background:rgba(77,214,165,.12);border:1px solid var(--accent2);color:var(--accent2)}
+  .banner.bad{background:rgba(255,93,115,.12);border:1px solid var(--danger);color:var(--danger)}
+  .banner.tie{background:rgba(255,194,75,.12);border:1px solid var(--warn);color:var(--warn)}
+  .truth{font-size:18px;text-align:center}
+  .truth strong{color:var(--accent2);text-transform:uppercase;letter-spacing:1px}
+  .overlay{
+    position:fixed;inset:0;background:rgba(6,7,16,.7);backdrop-filter:blur(3px);
+    display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;
+  }
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;max-width:400px;width:100%}
+  .modal h2{margin-top:0}
+  .modal .row{margin-top:16px}
+  footer{max-width:560px;margin:0 auto;padding:0 16px 30px;color:#565c86;font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">🕵️ Find the Imposter</span>
+  <span id="headerQuit"></span>
+</header>
+<main id="app" aria-live="polite"></main>
+<footer>Pass one phone around. Every round hides a new word.</footer>
+
+<script>
+'use strict';
+/* ------------------------------------------------------------------ */
+/* Word pool                                                           */
+/* ------------------------------------------------------------------ */
+const WORDS=[
+  'pizza','elephant','guitar','rocket','beach','castle','dragon','coffee',
+  'jungle','mirror','pencil','volcano','penguin','rainbow','submarine','treasure',
+  'umbrella','wizard','bicycle','candle','dolphin','fireworks','glacier','hammock',
+  'kangaroo','lighthouse','mushroom','orchestra','pyramid','skeleton','telescope','violin'
+];
+const MIN_PLAYERS=4, MAX_PLAYERS=12;
+const GUESS_OPTIONS=6;
+const GUARD_MS=450;               /* anti double-tap window            */
+const GUARDED=new Set(['openReveal','nextReveal','openBallot','confirmVote','openGuess','confirmGuess']);
+
+/* ------------------------------------------------------------------ */
+/* Global state (intentionally global: simple for a party game and     */
+/* handy for tests)                                                    */
+/* ------------------------------------------------------------------ */
+function makePlayers(n){ return Array.from({length:n},(_,i)=>({id:'p'+(i+1),name:'Player '+(i+1)})); }
+
+let state={
+  screen:'home',
+  setup:{ players:makePlayers(MIN_PLAYERS), imposterCount:1, timerSeconds:60 },
+  scores:{},
+  round:null,
+  lastWord:null,
+  clock:null
+};
+let clickGuard=0;      /* timestamp until which guarded taps are swallowed */
+let stickyReveal=false;/* "pinned" reveal toggled by tap / Enter           */
+let clockTimer=null;
+
+/* ------------------------------------------------------------------ */
+/* Small helpers                                                       */
+/* ------------------------------------------------------------------ */
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function rand(n){ return Math.floor(Math.random()*n); }
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=rand(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function nameOf(id){ const p=state.setup.players.find(p=>p.id===id); return p?p.name:id; }
+function pickWord(){
+  const pool=WORDS.filter(w=>w!==state.lastWord);
+  return pool[rand(pool.length)];
+}
+
+/* ------------------------------------------------------------------ */
+/* Game flow                                                           */
+/* ------------------------------------------------------------------ */
+function startGame(){
+  const players=state.setup.players;
+  const ids=players.map(p=>p.id);
+  const imposterCount=Math.max(1,Math.min(state.setup.imposterCount,ids.length-1));
+  const imposters=shuffle(ids).slice(0,imposterCount);
+  const word=pickWord();
+  state.scores={}; ids.forEach(id=>state.scores[id]=0);
+  state.round={
+    word, imposters,
+    alive:ids.slice(),
+    revealIndex:0, revealOpen:false, revealed:false,
+    clueIndex:0,
+    ballot:null, runoff:false, deadlock:false,
+    eliminated:null, elimWasImposter:false,
+    guessChoices:null, guessIndex:null, guessOpen:false,
+    result:null
+  };
+  state.lastWord=word;
+  stickyReveal=false;
+  stopClock();
+  state.screen='reveal';
+  paint();
+}
+
+function openReveal(){ state.round.revealOpen=true; state.round.revealed=false; stickyReveal=false; paint(); }
+
+function nextReveal(){
+  const r=state.round;
+  r.revealIndex++; r.revealOpen=false; r.revealed=false; stickyReveal=false;
+  paint();
+}
+
+function beginClues(){ state.round.clueIndex=0; state.screen='clues'; paint(); }
+
+function nextSpeaker(){
+  const r=state.round;
+  r.clueIndex++;
+  if(r.clueIndex>=r.alive.length){ beginDiscussion(); return; }
+  paint();
+}
+
+function beginDiscussion(){
+  stopClock();
+  state.screen='discussion';
+  const secs=state.setup.timerSeconds|0;
+  if(secs>0){
+    state.clock={ total:secs*1000, remaining:secs*1000, deadline:Date.now()+secs*1000, running:true };
+    clockTimer=setInterval(paintClock,250);
+  }else{
+    state.clock=null;
+  }
+  paint();
+}
+
+function stopClock(){ if(clockTimer!==null){ clearInterval(clockTimer); clockTimer=null; } }
+
+function paintClock(){
+  const c=state.clock;
+  if(!c) return;
+  if(c.running && Date.now()>=c.deadline){ stopClock(); beginBallot(); return; }
+  const el=document.querySelector('.clock');
+  if(el){
+    const ms=c.running?Math.max(0,c.deadline-Date.now()):c.remaining;
+    const s=Math.ceil(ms/1000);
+    el.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+    el.classList.toggle('paused',!c.running);
+  }
+}
+
+function toggleClock(){
+  const c=state.clock;
+  if(!c) return;
+  if(c.running){ c.remaining=Math.max(0,c.deadline-Date.now()); c.running=false; }
+  else{ c.deadline=Date.now()+c.remaining; c.running=true; }
+  paint();
+}
+
+function beginBallot(){
+  stopClock();
+  const r=state.round;
+  r.ballot={ voters:r.alive.slice(), index:0, candidates:r.alive.slice(), votes:{}, pick:null, open:false };
+  state.screen='voting';
+  paint();
+}
+
+function openBallot(){
+  const b=state.round.ballot;
+  b.open=true; b.pick=null;
+  paint();
+}
+
+function selectVote(id){ state.round.ballot.pick=id; paint(); }
+
+function confirmVote(){
+  const b=state.round.ballot;
+  if(!b || b.pick===null) return;
+  const voter=b.voters[b.index];
+  b.votes[voter]=b.pick;
+  b.index++;
+  b.pick=null;
+  if(b.index>=b.voters.length){ resolveBallot(); return; }
+  b.open=false;
+  paint();
+}
+
+function resolveBallot(){
+  const r=state.round;
+  const counts={};
+  Object.values(r.ballot.votes).forEach(v=>counts[v]=(counts[v]||0)+1);
+  const max=Math.max.apply(null,Object.values(counts));
+  const top=Object.keys(counts).filter(k=>counts[k]===max);
+  if(top.length>1){
+    if(r.runoff){ endImposterWin('deadlock'); return; }
+    r.deadlock=true; r.runoff=true; r.tied=top.slice();
+    state.screen='tally'; paint(); return;
+  }
+  r.deadlock=false;
+  const eliminated=top[0];
+  r.alive=r.alive.filter(x=>x!==eliminated);
+  r.eliminated=eliminated;
+  r.elimWasImposter=r.imposters.includes(eliminated);
+  r.runoff=false;
+  state.screen='tally';
+  paint();
+}
+
+function beginGuess(){
+  const r=state.round;
+  const others=shuffle(WORDS.filter(w=>w!==r.word)).slice(0,GUESS_OPTIONS-1);
+  r.guessChoices=shuffle([r.word].concat(others));
+  r.guessIndex=null; r.guessOpen=false;
+  state.screen='guess';
+  paint();
+}
+
+function openGuess(){ state.round.guessOpen=true; paint(); }
+function selectGuess(i){ state.round.guessIndex=Number(i); paint(); }
+
+function confirmGuess(){
+  const r=state.round;
+  if(r.guessIndex===null || r.guessIndex===undefined) return;
+  const choice=r.guessChoices[r.guessIndex];
+  r.guessResult=choice;
+  if(choice===r.word){
+    r.imposters.forEach(id=>state.scores[id]+=2);
+    r.result={winner:'imposters',reason:'guess'};
+  }else{
+    r.alive.filter(id=>!r.imposters.includes(id)).forEach(id=>state.scores[id]+=1);
+    r.result={winner:'crew',reason:'capture'};
+  }
+  state.screen='result';
+  paint();
+}
+
+function continueTally(){
+  const r=state.round;
+  if(r.deadlock){ beginBallot(); return; }            /* runoff vote   */
+  if(r.elimWasImposter){
+    const left=r.imposters.filter(id=>r.alive.includes(id));
+    if(left.length>0){ endImposterWin('survivor'); return; }
+    beginGuess(); return;                              /* last imposter caught */
+  }
+  const impsAlive=r.imposters.filter(id=>r.alive.includes(id)).length;
+  if(impsAlive>0 && r.alive.length-impsAlive<=impsAlive){ endImposterWin('survivor'); return; }
+  beginBallot();
+}
+
+function endImposterWin(reason){
+  const r=state.round;
+  r.imposters.forEach(id=>state.scores[id]+=3);
+  r.result={winner:'imposters',reason};
+  state.screen='result';
+  paint();
+}
+
+function showScoreboard(){ state.screen='scoreboard'; paint(); }
+
+function nextRound(){
+  const players=state.setup.players;
+  const ids=players.map(p=>p.id);
+  const imposterCount=Math.max(1,Math.min(state.setup.imposterCount,ids.length-1));
+  const imposters=shuffle(ids).slice(0,imposterCount);
+  const word=pickWord();
+  state.lastWord=word;
+  state.round={
+    word, imposters,
+    alive:ids.slice(),
+    revealIndex:0, revealOpen:false, revealed:false,
+    clueIndex:0,
+    ballot:null, runoff:false, deadlock:false,
+    eliminated:null, elimWasImposter:false,
+    guessChoices:null, guessIndex:null, guessOpen:false,
+    result:null
+  };
+  stickyReveal=false;
+  stopClock();
+  state.screen='reveal';
+  paint();
+}
+
+function goHome(){ stopClock(); state.screen='home'; state.round=null; paint(); }
+
+/* ------------------------------------------------------------------ */
+/* Reveal card interactions                                            */
+/* ------------------------------------------------------------------ */
+function paintRevealPanel(){
+  const el=document.querySelector('.reveal-panel');
+  const card=document.querySelector('[data-hold="role"]');
+  if(!el||!state.round) return;
+  el.innerHTML=rolePanelHTML();
+  if(card) card.classList.toggle('open',!!state.round.revealed);
+}
+function showRole(){ if(!state.round) return; state.round.revealed=true; paintRevealPanel(); }
+function hideRole(){ if(!state.round) return; state.round.revealed=false; stickyReveal=false; paintRevealPanel(); }
+function toggleRevealSticky(){
+  if(!state.round) return;
+  stickyReveal=!stickyReveal;
+  state.round.revealed=stickyReveal;
+  paint();
+}
+
+/* ------------------------------------------------------------------ */
+/* Quit modal                                                          */
+/* ------------------------------------------------------------------ */
+function openQuitModal(){
+  closeModal();
+  const ov=document.createElement('div');
+  ov.className='overlay';
+  ov.innerHTML=
+    '<div class="modal" role="dialog" aria-modal="true" aria-label="Quit game">'+
+      '<h2>Quit this game?</h2>'+
+      '<p class="dim">Scores and the current round will be lost.</p>'+
+      '<div class="row">'+
+        '<button class="ghost" data-action="quitCancel">Keep playing</button>'+
+        '<button class="primary" data-action="quitConfirm">Quit</button>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(ov);
+  const cancel=ov.querySelector('[data-action="quitCancel"]');
+  if(cancel) cancel.focus();
+}
+function closeModal(){
+  const ov=document.querySelector('.overlay');
+  if(ov) ov.remove();
+}
+function quit(){ openQuitModal(); }
+function quitCancel(){ closeModal(); }
+function quitConfirm(){ closeModal(); goHome(); }
+
+/* ------------------------------------------------------------------ */
+/* Setup actions                                                       */
+/* ------------------------------------------------------------------ */
+function play(){ state.screen='setup'; paint(); }
+function increasePlayers(){ if(state.setup.players.length<MAX_PLAYERS) state.setup.players.push({id:'p'+(state.setup.players.length+1),name:'Player '+(state.setup.players.length+1)}); paint(); }
+function decreasePlayers(){ if(state.setup.players.length>MIN_PLAYERS) state.setup.players.pop(); paint(); }
+function setImposterCount(v){ state.setup.imposterCount=v; paint(); }
+function setTimerSeconds(v){ state.setup.timerSeconds=v; paint(); }
+
+/* ------------------------------------------------------------------ */
+/* Rendering                                                           */
+/* ------------------------------------------------------------------ */
+function rolePanelHTML(){
+  const r=state.round;
+  if(!r.revealed){
+    return '<span class="big">🔒 HOLD TO REVEAL</span>'+
+           '<span class="tiny">Keep the screen facing you. Release to hide it again.</span>';
+  }
+  const viewer=r.alive[r.revealIndex];
+  if(r.imposters.includes(viewer)){
+    const partner=r.imposters.length>1
+      ? '<span class="tiny">Your partner imposter: '+esc(nameOf(r.imposters.find(x=>x!==viewer)))+'</span>'
+      : '';
+    return '<span class="big imp">You are the IMPOSTER</span>'+
+           '<span class="tiny">You do not know the secret word.<br>Blend in, fake your clues, survive the vote.</span>'+partner;
+  }
+  return 'You are <span class="big">CREW</span>'+
+         '<span class="word">'+esc(r.word)+'</span>'+
+         '<span class="tiny">Give clues about this word — but don\'t make it too easy for the imposter.</span>';
+}
+
+function revealScreenHTML(){
+  const r=state.round, n=r.alive.length;
+  if(r.revealIndex>=n){
+    return '<div class="eyebrow">Reveals complete</div>'+
+      '<h2>Everyone is ready!</h2>'+
+      '<p class="dim">All '+n+' players have secretly seen their role. Start the clue round.</p>'+
+      '<button class="primary wide" data-action="beginClues">Begin clues</button>';
+  }
+  const id=r.alive[r.revealIndex];
+  let inner='<div class="eyebrow">Private reveal · '+(r.revealIndex+1)+' of '+n+'</div>'+
+    '<h2>'+esc(nameOf(id))+', you\'re up</h2>'+
+    '<p class="dim">Make sure nobody else can see your screen.</p>';
+  if(!r.revealOpen){
+    inner+='<button class="primary wide" data-action="openReveal">Open my secret card</button>';
+  }else{
+    inner+='<div class="role-card'+(r.revealed?' open':'')+'" data-hold="role" data-action="tapReveal" tabindex="0" role="button" aria-label="Hold to reveal your role">'+
+      '<div class="reveal-panel">'+rolePanelHTML()+'</div></div>'+
+      '<button class="wide" data-action="nextReveal">'+(r.revealIndex===n-1?'Done — everyone has seen their role':'Hide card &amp; pass the phone')+'</button>';
+  }
+  return inner;
+}
+
+function cluesScreenHTML(){
+  const r=state.round, n=r.alive.length;
+  const speaker=r.alive[Math.min(r.clueIndex,n-1)];
+  return '<div class="eyebrow">Clue round · '+(r.clueIndex+1)+' of '+n+'</div>'+
+    '<h2>'+esc(nameOf(speaker))+', give a clue</h2>'+
+    '<p>Say exactly one word connected to the secret word. Don\'t be too obvious — the imposter is listening.</p>'+
+    '<button class="primary wide" data-action="nextSpeaker">'+(r.clueIndex===n-1?'Start the discussion':'Next speaker')+'</button>';
+}
+
+function discussionScreenHTML(){
+  const r=state.round;
+  let clock='';
+  if(state.clock){
+    const s=Math.ceil((state.clock.running?Math.max(0,state.clock.deadline-Date.now()):state.clock.remaining)/1000);
+    clock='<div class="clock'+(state.clock.running?'':' paused')+'">'+Math.floor(s/60)+':'+String(s%60).padStart(2,'0')+'</div>'+
+      '<button class="ghost wide" data-action="toggleClock">'+(state.clock.running?'Pause timer':'Resume timer')+'</button>';
+  }
+  return '<div class="eyebrow">Discussion</div>'+
+    '<h2>Talk it out</h2>'+
+    '<p class="dim">Who sounded fake? Compare clues, call out suspicions, then put it to a vote.</p>'+
+    clock+
+    '<button class="primary wide" data-action="goVote">Call the vote</button>';
+}
+
+function votingScreenHTML(){
+  const r=state.round, b=r.ballot;
+  const voter=b.voters[b.index];
+  if(!b.open){
+    return '<div class="eyebrow">Vote · '+(b.index+1)+' of '+b.voters.length+'</div>'+
+      '<h2>Who is the imposter?</h2>'+
+      '<p class="dim">Pass the phone to <strong>'+esc(nameOf(voter))+'</strong>. Vote in secret.</p>'+
+      '<button class="primary wide" data-action="openBallot">Open ballot for '+esc(nameOf(voter))+'</button>';
+  }
+  let candidates='';
+  b.candidates.forEach(id=>{
+    if(id===voter) return;                       /* no self-vote */
+    candidates+='<button data-action="selectVote" data-value="'+id+'"'+(b.pick===id?' class="on"':'')+'>'+esc(nameOf(id))+'</button>';
+  });
+  return '<div class="eyebrow">Secret ballot</div>'+
+    '<h2>'+esc(nameOf(voter))+', cast your vote</h2>'+
+    '<p class="dim">Pick the player you want to eliminate.</p>'+
+    '<div class="grid">'+candidates+'</div>'+
+    '<button class="primary wide" data-action="confirmVote"'+(b.pick===null?' disabled':'')+'>Lock in vote</button>';
+}
+
+function tallyScreenHTML(){
+  const r=state.round;
+  if(r.deadlock){
+    const tied=r.tied.map(nameOf).map(esc).join(', ');
+    return '<div class="banner tie">⚖️ Tie vote — deadlock</div>'+
+      '<p>The votes are split between <strong>'+tied+'</strong>. Nobody is eliminated… yet.</p>'+
+      '<p class="dim">Runoff vote: the tied players are on the ballot again. If it ties once more, the imposter escapes.</p>'+
+      '<button class="primary wide" data-action="continueTally">Run the runoff vote</button>';
+  }
+  const id=r.eliminated;
+  if(r.elimWasImposter){
+    const more=r.imposters.some(x=>r.alive.includes(x));
+    return '<div class="banner good">🎉 '+esc(nameOf(id))+' was the IMPOSTER!</div>'+
+      '<button class="primary wide" data-action="continueTally">Continue</button>';
+  }
+  return '<div class="banner bad">💀 '+esc(nameOf(id))+' was innocent…</div>'+
+    '<p class="dim">The crew just lost a member. The imposter is still hiding among you.</p>'+
+    '<button class="primary wide" data-action="continueTally">Continue</button>';
+}
+
+function guessScreenHTML(){
+  const r=state.round;
+  const impName=esc(nameOf(r.eliminated));
+  if(!r.guessOpen){
+    return '<div class="eyebrow">Imposter\'s last chance</div>'+
+      '<h2>'+impName+' was caught!</h2>'+
+      '<p>But the imposter gets one final move: guess the secret word and steal the round.</p>'+
+      '<p class="dim">Hand the phone to '+impName+' — nobody peeking.</p>'+
+      '<button class="primary wide" data-action="openGuess">Make the guess</button>';
+  }
+  let opts='';
+  r.guessChoices.forEach((w,i)=>{
+    opts+='<button data-action="selectGuess" data-index="'+i+'"'+(r.guessIndex===i?' class="on"':'')+'>'+esc(w)+'</button>';
+  });
+  return '<div class="eyebrow">Final guess</div>'+
+    '<h2>Which one was the secret word?</h2>'+
+    '<div class="grid guessgrid">'+opts+'</div>'+
+    '<button class="primary wide" data-action="confirmGuess"'+(r.guessIndex===null?' disabled':'')+'>Confirm guess</button>';
+}
+
+function resultScreenHTML(){
+  const r=state.round;
+  let headline;
+  if(r.result.winner==='imposters'){
+    const why=r.result.reason==='guess'
+      ? 'Caught… but '+esc(nameOf(r.eliminated))+' guessed the secret word and stole the round!'
+      : r.result.reason==='deadlock'
+        ? 'The votes deadlocked twice — the imposter slipped away in the chaos.'
+        : 'An imposter survived the purge. Deception wins the day.';
+    headline='<div class="banner bad">🎭 Deception! The imposters win</div><p>'+why+'</p>';
+  }else{
+    headline='<div class="banner good">🏆 Crew victory!</div>'+
+      '<p>Every imposter was caught and the secret word stayed safe.</p>';
+  }
+  return headline+
+    '<p class="truth">The truth — the secret word was <strong>'+esc(r.word)+'</strong></p>'+
+    '<div class="row" style="justify-content:center">'+r.imposters.map(id=>'<span class="pill">🎭 '+esc(nameOf(id))+'</span>').join('')+'</div>'+
+    '<button class="primary wide" data-action="scoreboard">See scoreboard</button>'+
+    '<button class="ghost wide" data-action="nextRound">Play next round</button>';
+}
+
+function scoreboardScreenHTML(){
+  const rows=state.setup.players.map(p=>{
+    const dead=state.round&&!state.round.alive.includes(p.id);
+    return '<tr><td>'+esc(p.name)+(state.round&&state.round.imposters.includes(p.id)?' 🎭':'')+(dead?' <span class="dim">(out)</span>':'')+'</td>'+
+      '<td class="score">'+(state.scores[p.id]||0)+'</td></tr>';
+  }).join('');
+  return '<div class="eyebrow">Scoreboard</div>'+
+    '<h2>Running totals</h2>'+
+    '<table><thead><tr><th>Player</th><th style="text-align:right">Score</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<button class="primary wide" data-action="nextRound">Play next round</button>'+
+    '<button class="ghost wide" data-action="goHome">Back to menu</button>';
+}
+
+function homeScreenHTML(){
+  return '<div class="eyebrow">Party game · one phone</div>'+
+    '<h1>Find the Imposter</h1>'+
+    '<p>Everyone secretly learns the same word — except the imposter, who gets nothing. Trade clues, sniff out the fake, and vote them out before they figure out your word.</p>'+
+    '<div class="card"><p class="dim" style="margin:0">🕵️ 4–12 players &nbsp;·&nbsp; ⏱️ optional timer &nbsp;·&nbsp; 🎭 1–2 imposters</p></div>'+
+    '<button class="primary wide" data-action="play">Play</button>';
+}
+
+function setupScreenHTML(){
+  const s=state.setup;
+  const names=s.players.map((p,i)=>
+    '<input type="text" data-name-index="'+i+'" maxlength="18" value="'+esc(p.name)+'" aria-label="Name of player '+(i+1)+'">'
+  ).join('');
+  const canStart=s.players.length>=MIN_PLAYERS&&(s.imposterCount===1||s.players.length>=6);
+  return '<div class="eyebrow">New game</div>'+
+    '<h2>Set up the round</h2>'+
+    '<div class="card"><div class="row"><strong>Players</strong>'+
+      '<div class="stepper">'+
+        '<button class="icon" data-action="decreasePlayers" aria-label="Fewer players"'+(s.players.length<=MIN_PLAYERS?' disabled':'')+'>−</button>'+
+        '<span class="num">'+s.players.length+'</span>'+
+        '<button class="icon" data-action="increasePlayers" aria-label="More players"'+(s.players.length>=MAX_PLAYERS?' disabled':'')+'>+</button>'+
+      '</div></div>'+
+      '<div style="margin-top:10px">'+names+'</div></div>'+
+    '<div class="card"><div class="row"><strong>Imposters</strong></div>'+
+      '<div class="seg" style="margin-top:10px">'+
+        '<button data-action="imposterCount" data-value="1"'+(s.imposterCount===1?' class="on"':'')+'>1 imposter</button>'+
+        '<button data-action="imposterCount" data-value="2"'+(s.imposterCount===2?' class="on"':'')+'>2 imposters</button>'+
+      '</div>'+
+      '<p class="dim" style="margin:8px 0 0;font-size:13px">'+(s.players.length<6?'Two imposters need at least 6 players.':'Two imposters: catching one still leaves a partner!')+'</p></div>'+
+    '<div class="card"><div class="row"><strong>Discussion timer</strong></div>'+
+      '<div class="seg" style="margin-top:10px">'+
+        '<button data-action="timerSeconds" data-value="0"'+(s.timerSeconds===0?' class="on"':'')+'>Off</button>'+
+        '<button data-action="timerSeconds" data-value="60"'+(s.timerSeconds===60?' class="on"':'')+'>60s</button>'+
+        '<button data-action="timerSeconds" data-value="120"'+(s.timerSeconds===120?' class="on"':'')+'>120s</button>'+
+      '</div></div>'+
+    '<button class="primary wide" data-action="start"'+(canStart?'':' disabled')+'>Start game</button>';
+}
+
+function paint(){
+  const app=document.getElementById('app');
+  const quitSlot=document.getElementById('headerQuit');
+  const inGame=['reveal','clues','discussion','voting','tally','guess','result','scoreboard'].includes(state.screen);
+  quitSlot.innerHTML=inGame?'<button class="icon ghost" data-action="quit" aria-label="Quit game">✕ Quit</button>':'';
+  let html='';
+  switch(state.screen){
+    case 'setup':      html=setupScreenHTML(); break;
+    case 'reveal':     html=revealScreenHTML(); break;
+    case 'clues':      html=cluesScreenHTML(); break;
+    case 'discussion': html=discussionScreenHTML(); break;
+    case 'voting':     html=votingScreenHTML(); break;
+    case 'tally':      html=tallyScreenHTML(); break;
+    case 'guess':      html=guessScreenHTML(); break;
+    case 'result':     html=resultScreenHTML(); break;
+    case 'scoreboard': html=scoreboardScreenHTML(); break;
+    default:           html=homeScreenHTML();
+  }
+  app.innerHTML=html;
+}
+
+/* ------------------------------------------------------------------ */
+/* Event wiring (delegated, survives re-renders)                       */
+/* ------------------------------------------------------------------ */
+const ACTIONS={
+  play, increasePlayers, decreasePlayers,
+  imposterCount:el=>setImposterCount(Number(el.dataset.value)),
+  timerSeconds:el=>setTimerSeconds(Number(el.dataset.value)),
+  start:startGame,
+  openReveal, tapReveal:toggleRevealSticky, nextReveal,
+  beginClues, nextSpeaker,
+  toggleClock, goVote:beginBallot,
+  openBallot, selectVote:el=>selectVote(el.dataset.value), confirmVote,
+  continueTally,
+  openGuess, selectGuess:el=>selectGuess(el.dataset.index), confirmGuess,
+  scoreboard:showScoreboard, nextRound, goHome,
+  quit, quitCancel, quitConfirm
+};
+
+document.addEventListener('click',e=>{
+  const el=e.target.closest?e.target.closest('[data-action]'):null;
+  if(!el) return;
+  const action=el.dataset.action;
+  if(GUARDED.has(action)){
+    const now=Date.now();
+    if(now<clickGuard) return;         /* swallow accidental double tap */
+    clickGuard=now+GUARD_MS;
+  }
+  const fn=ACTIONS[action];
+  if(fn) fn(el);
+});
+
+document.addEventListener('pointerdown',e=>{
+  if(e.target.closest&&e.target.closest('[data-hold="role"]')) showRole();
+},true);
+
+document.addEventListener('pointerup',()=>{
+  if(state.round&&state.round.revealed&&!stickyReveal){
+    state.round.revealed=false;
+    paintRevealPanel();
+  }
+},true);
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){ closeModal(); return; }
+  if(e.key==='Enter'&&e.target&&e.target.closest&&e.target.closest('[data-hold="role"]')){
+    e.preventDefault();
+    toggleRevealSticky();
+  }
+});
+
+document.addEventListener('input',e=>{
+  const el=e.target;
+  if(el&&el.dataset&&el.dataset.nameIndex!==undefined){
+    const p=state.setup.players[Number(el.dataset.nameIndex)];
+    if(p) p.name=el.value||p.id;
+  }
+});
+
+paint();
+</script>
+</body>
+</html>
